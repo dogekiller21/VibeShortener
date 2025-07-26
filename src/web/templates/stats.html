@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}Статистика - Vibe Shortener{% endblock %}
+
+{% block content %}
+<div class="py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-extrabold text-gray-900 mb-2">
+                Статистика ссылок
+            </h1>
+            <p class="text-gray-600">
+                Просматривайте статистику переходов по вашим коротким ссылкам
+            </p>
+        </div>
+
+        <!-- Search Form -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+            <form id="statsForm" class="space-y-4">
+                <div>
+                    <label for="shortCode" class="block text-sm font-medium text-gray-700 mb-2">
+                        Введите короткий код ссылки
+                    </label>
+                    <div class="flex space-x-3">
+                        <input 
+                            id="shortCode" 
+                            name="short_code" 
+                            type="text" 
+                            required 
+                            class="flex-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                            placeholder="например: abc123"
+                        >
+                        <button 
+                            type="submit" 
+                            id="submitBtn"
+                            class="bg-indigo-600 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                        >
+                            Показать статистику
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" class="hidden">
+            <div class="flex justify-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="result" class="space-y-6"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Функция для получения параметров из URL
+    function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+    }
+
+    // Функция для автоматической загрузки статистики
+    async function loadStats(shortCode) {
+        const submitBtn = document.getElementById('submitBtn');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+        
+        // Показываем загрузку
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Загружаем...';
+        loading.classList.remove('hidden');
+        result.innerHTML = '';
+        
+        try {
+            const response = await fetch(`/api/v1/stats/${shortCode}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                console.log('Статистика:', data);
+                
+                // Форматируем даты
+                const formatDate = (dateString) => {
+                    if (!dateString) return 'Нет данных';
+                    const date = new Date(dateString);
+                    return date.toLocaleString('ru-RU', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                };
+                
+                result.innerHTML = `
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-fade-in">
+                        <div class="space-y-6">
+                            <!-- Основная информация -->
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <h2 class="text-xl font-bold text-gray-900">Статистика ссылки</h2>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+                                        ${data.short_code}
+                                    </span>
+                                </div>
+                                
+                                <div class="space-y-3">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-700">Оригинальная ссылка:</p>
+                                        <a href="${data.original_url}" target="_blank" class="text-sm text-indigo-600 hover:text-indigo-500 break-all">
+                                            ${data.original_url}
+                                        </a>
+                                    </div>
+                                    
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-700">Короткая ссылка:</p>
+                                        <div class="flex items-center space-x-2">
+                                            <a href="${data.short_url}" target="_blank" class="text-sm text-indigo-600 hover:text-indigo-500">
+                                                ${data.short_url}
+                                            </a>
+                                            <button 
+                                                onclick="copyToClipboard('${data.short_url}', this)"
+                                                class="text-gray-400 hover:text-gray-600"
+                                                title="Копировать ссылку"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Статистика -->
+                                <div class="space-y-4">
+                                    <div class="bg-blue-50 rounded-lg p-4">
+                                        <h3 class="text-sm font-medium text-blue-700 mb-2">Общее количество переходов</h3>
+                                        <div class="text-2xl font-bold text-blue-900">${data.total_clicks}</div>
+                                    </div>
+                                    
+                                    <div class="bg-green-50 rounded-lg p-4">
+                                        <h3 class="text-sm font-medium text-green-700 mb-2">Дата создания</h3>
+                                        <div class="text-sm text-green-900">${formatDate(data.created_at)}</div>
+                                    </div>
+                                    
+                                    <div class="bg-purple-50 rounded-lg p-4">
+                                        <h3 class="text-sm font-medium text-purple-700 mb-2">Последний переход</h3>
+                                        <div class="text-sm text-purple-900">${formatDate(data.last_click)}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- График активности (заглушка) -->
+                            <div class="mt-6 pt-6 border-t border-gray-200">
+                                <h3 class="text-sm font-medium text-gray-700 mb-4">Активность за последние 7 дней</h3>
+                                <div class="bg-gray-50 rounded-lg p-4 text-center text-gray-500">
+                                    <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                    <p class="text-sm">График активности будет добавлен в будущих версиях</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                result.innerHTML = `
+                    <div class="bg-red-50 border border-red-200 rounded-md p-4 animate-fade-in">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-red-800">Ссылка не найдена</h3>
+                                <div class="mt-2 text-sm text-red-700">
+                                    ${data.detail || 'Ссылка с таким кодом не существует'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Ошибка:', error);
+            result.innerHTML = `
+                <div class="bg-red-50 border border-red-200 rounded-md p-4 animate-fade-in">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-red-800">Ошибка</h3>
+                            <div class="mt-2 text-sm text-red-700">
+                                Не удалось загрузить статистику
+                            </div>
+                        </div>
+                    </div>
+                `;
+        } finally {
+            // Скрываем загрузку
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Показать статистику';
+            loading.classList.add('hidden');
+        }
+    }
+
+    // Проверяем query параметр при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        const codeParam = getQueryParam('code');
+        if (codeParam) {
+            // Заполняем форму
+            document.getElementById('shortCode').value = codeParam;
+            // Автоматически загружаем статистику
+            loadStats(codeParam);
+        }
+    });
+
+    document.getElementById('statsForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const shortCode = document.getElementById('shortCode').value.trim();
+        
+        if (!shortCode) {
+            alert('Пожалуйста, введите короткий код ссылки');
+            return;
+        }
+        
+        // Обновляем URL с query параметром
+        const url = new URL(window.location);
+        url.searchParams.set('code', shortCode);
+        window.history.pushState({}, '', url);
+        
+        // Загружаем статистику
+        await loadStats(shortCode);
+    });
+
+    // Функция для копирования в буфер обмена
+    async function copyToClipboard(text, buttonElement) {
+        try {
+            await navigator.clipboard.writeText(text);
+            
+            // Показываем уведомление
+            const originalHTML = buttonElement.innerHTML;
+            buttonElement.innerHTML = `
+                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            `;
+            
+            setTimeout(() => {
+                buttonElement.innerHTML = originalHTML;
+            }, 2000);
+            
+        } catch (err) {
+            console.error('Ошибка копирования:', err);
+        }
+    }
+</script>
+{% endblock %} 

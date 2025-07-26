@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+
+{% block title %}Мои ссылки - Vibe Shortener{% endblock %}
+
+{% block content %}
+<div class="py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-extrabold text-gray-900 mb-2">
+                Мои ссылки
+            </h1>
+            <p class="text-gray-600">
+                Созданные вами короткие ссылки с возможностью быстрого доступа
+            </p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Всего ссылок</p>
+                        <p class="text-2xl font-bold text-gray-900" id="totalLinks">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Общие переходы</p>
+                        <p class="text-2xl font-bold text-gray-900" id="totalClicks">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Последняя активность</p>
+                        <p class="text-sm font-bold text-gray-900" id="lastActivity">Нет данных</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+            <div class="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
+                <div class="flex items-center space-x-4">
+                    <button 
+                        id="refreshBtn"
+                        class="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                    >
+                        Обновить данные
+                    </button>
+                    <button 
+                        id="clearBtn"
+                        class="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
+                    >
+                        Очистить сохраненные
+                    </button>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <label for="searchInput" class="text-sm font-medium text-gray-700">Поиск:</label>
+                    <input 
+                        id="searchInput" 
+                        type="text" 
+                        placeholder="Поиск по ссылкам..."
+                        class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" class="hidden">
+            <div class="flex justify-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            </div>
+        </div>
+
+        <!-- Links List -->
+        <div id="linksList" class="space-y-4"></div>
+
+        <!-- Load More Button -->
+        <div id="loadMoreContainer" class="hidden text-center mt-8">
+            <button 
+                id="loadMoreBtn"
+                class="bg-gray-600 text-white px-6 py-3 rounded-md text-sm font-medium hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200"
+            >
+                Загрузить еще
+            </button>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">Нет сохраненных ссылок</h3>
+            <p class="mt-1 text-sm text-gray-500">Создайте первую короткую ссылку на главной странице</p>
+            <div class="mt-6">
+                <a href="/" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                    Создать ссылку
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    class LinksManager {
+        constructor() {
+            this.links = [];
+            this.filteredLinks = [];
+            this.currentPage = 0;
+            this.itemsPerPage = 10;
+            this.searchTerm = '';
+            
+            this.init();
+        }
+
+        init() {
+            this.loadLinks();
+            this.setupEventListeners();
+            this.render();
+            // Автоматически обновляем статистику при загрузке страницы
+            this.refreshStats();
+        }
+
+        loadLinks() {
+            const savedLinks = localStorage.getItem('vibe_shortener_links');
+            this.links = savedLinks ? JSON.parse(savedLinks) : [];
+            this.filteredLinks = [...this.links];
+        }
+
+        saveLinks() {
+            localStorage.setItem('vibe_shortener_links', JSON.stringify(this.links));
+        }
+
+        addLink(linkData) {
+            const link = {
+                id: Date.now(),
+                shortCode: linkData.short_code,
+                originalUrl: linkData.original_url,
+                shortUrl: linkData.short_url,
+                createdAt: new Date().toISOString(),
+                clicks: 0,
+                lastClick: null
+            };
+            
+            this.links.unshift(link);
+            this.saveLinks();
+            this.filteredLinks = [...this.links];
+            this.render();
+        }
+
+        updateLinkStats(shortCode, stats) {
+            const link = this.links.find(l => l.shortCode === shortCode);
+            if (link) {
+                console.log(`Обновляем статистику для ${shortCode}:`, stats);
+                link.clicks = stats.total_clicks;
+                link.lastClick = stats.last_click;
+                this.saveLinks();
+                this.render();
+            }
+        }
+
+
+
+        clearAll() {
+            if (confirm('Вы уверены, что хотите очистить все сохраненные ссылки из локального хранилища?')) {
+                this.links = [];
+                this.saveLinks();
+                this.filteredLinks = [];
+                this.render();
+            }
+        }
+
+        filterLinks(searchTerm) {
+            this.searchTerm = searchTerm.toLowerCase();
+            this.filteredLinks = this.links.filter(link => 
+                link.shortCode.toLowerCase().includes(this.searchTerm) ||
+                link.originalUrl.toLowerCase().includes(this.searchTerm)
+            );
+            this.currentPage = 0;
+            this.render();
+        }
+
+        getCurrentPageLinks() {
+            const start = this.currentPage * this.itemsPerPage;
+            const end = start + this.itemsPerPage;
+            return this.filteredLinks.slice(start, end);
+        }
+
+        setupEventListeners() {
+            // Refresh button
+            document.getElementById('refreshBtn').addEventListener('click', () => {
+                this.refreshStats();
+            });
+
+            // Clear button
+            document.getElementById('clearBtn').addEventListener('click', () => {
+                this.clearAll();
+            });
+
+            // Search input
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                this.filterLinks(e.target.value);
+            });
+
+            // Load more button
+            document.getElementById('loadMoreBtn').addEventListener('click', () => {
+                this.loadMore();
+            });
+        }
+
+        async refreshStats() {
+            const loading = document.getElementById('loading');
+            loading.classList.remove('hidden');
+
+            try {
+                console.log('Начинаем обновление статистики для', this.links.length, 'ссылок');
+                for (const link of this.links) {
+                    try {
+                        console.log(`Загружаем статистику для ${link.shortCode}...`);
+                        const response = await fetch(`/api/v1/stats/${link.shortCode}`);
+                        if (response.ok) {
+                            const stats = await response.json();
+                            console.log(`Получена статистика для ${link.shortCode}:`, stats);
+                            this.updateLinkStats(link.shortCode, stats);
+                        } else {
+                            console.error(`Ошибка API для ${link.shortCode}:`, response.status);
+                        }
+                    } catch (error) {
+                        console.error(`Ошибка загрузки статистики для ${link.shortCode}:`, error);
+                    }
+                }
+            } finally {
+                loading.classList.add('hidden');
+            }
+        }
+
+        loadMore() {
+            this.currentPage++;
+            this.render();
+        }
+
+        render() {
+            this.updateStats();
+            this.renderLinks();
+            this.updateLoadMoreButton();
+        }
+
+        updateStats() {
+            document.getElementById('totalLinks').textContent = this.links.length;
+            
+            const totalClicks = this.links.reduce((sum, link) => sum + (link.clicks || 0), 0);
+            document.getElementById('totalClicks').textContent = totalClicks;
+
+            const lastActivity = this.links
+                .filter(link => link.lastClick)
+                .sort((a, b) => new Date(b.lastClick) - new Date(a.lastClick))[0];
+            
+            document.getElementById('lastActivity').textContent = lastActivity 
+                ? new Date(lastActivity.lastClick).toLocaleDateString('ru-RU')
+                : 'Нет данных';
+        }
+
+        renderLinks() {
+            const linksList = document.getElementById('linksList');
+            const emptyState = document.getElementById('emptyState');
+
+            if (this.filteredLinks.length === 0) {
+                linksList.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            const currentPageLinks = this.getCurrentPageLinks();
+            
+            const linksHTML = currentPageLinks.map(link => this.renderLinkCard(link)).join('');
+            linksList.innerHTML = linksHTML;
+        }
+
+        renderLinkCard(link) {
+            const formatDate = (dateString) => {
+                if (!dateString) return 'Нет данных';
+                return new Date(dateString).toLocaleString('ru-RU');
+            };
+
+            return `
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-fade-in">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center space-x-3 mb-3">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    ${link.shortCode}
+                                </span>
+                                <span class="text-sm text-gray-500">
+                                    ${formatDate(link.createdAt)}
+                                </span>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">Оригинальная ссылка:</p>
+                                    <a href="${link.originalUrl}" target="_blank" class="text-sm text-indigo-600 hover:text-indigo-500 break-all">
+                                        ${link.originalUrl}
+                                    </a>
+                                </div>
+                                
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">Короткая ссылка:</p>
+                                    <div class="flex items-center space-x-2">
+                                        <a href="${link.shortUrl}" target="_blank" class="text-sm text-indigo-600 hover:text-indigo-500">
+                                            ${link.shortUrl}
+                                        </a>
+                                        <button 
+                                            onclick="linksManager.copyLink('${link.shortUrl}', this)"
+                                            class="text-gray-400 hover:text-gray-600"
+                                            title="Копировать ссылку"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col items-end space-y-2 ml-4">
+                            <div class="text-right">
+                                <p class="text-sm font-medium text-gray-900">${link.clicks !== undefined ? link.clicks : '...'}</p>
+                                <p class="text-xs text-gray-500">переходов</p>
+                            </div>
+                            
+                            <div class="flex space-x-2">
+                                <button 
+                                    onclick="linksManager.viewStats('${link.shortCode}')"
+                                    class="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200 flex items-center space-x-2"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                    <span>Статистика</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        updateLoadMoreButton() {
+            const loadMoreContainer = document.getElementById('loadMoreContainer');
+            const hasMore = (this.currentPage + 1) * this.itemsPerPage < this.filteredLinks.length;
+            
+            if (hasMore) {
+                loadMoreContainer.classList.remove('hidden');
+            } else {
+                loadMoreContainer.classList.add('hidden');
+            }
+        }
+
+        async copyLink(url, buttonElement) {
+            try {
+                await navigator.clipboard.writeText(url);
+                
+                const originalHTML = buttonElement.innerHTML;
+                buttonElement.innerHTML = `
+                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                `;
+                
+                setTimeout(() => {
+                    buttonElement.innerHTML = originalHTML;
+                }, 2000);
+                
+            } catch (err) {
+                console.error('Ошибка копирования:', err);
+            }
+        }
+
+        viewStats(shortCode) {
+            window.open(`/stats?code=${shortCode}`, '_blank');
+        }
+    }
+
+    // Initialize links manager
+    const linksManager = new LinksManager();
+</script>
+{% endblock %} 
