@@ -76,6 +76,7 @@
                     >
                         Обновить данные
                     </button>
+
                     <button 
                         id="clearBtn"
                         class="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
@@ -163,6 +164,8 @@
             localStorage.setItem('vibe_shortener_links', JSON.stringify(this.links));
         }
 
+
+
         addLink(linkData) {
             const link = {
                 id: Date.now(),
@@ -186,6 +189,10 @@
                 console.log(`Обновляем статистику для ${shortCode}:`, stats);
                 link.clicks = stats.total_clicks;
                 link.lastClick = stats.last_click;
+                // Обновляем shortUrl с правильным протоколом из API
+                if (stats.short_url) {
+                    link.shortUrl = stats.short_url;
+                }
                 this.saveLinks();
                 this.render();
             }
@@ -223,6 +230,8 @@
             document.getElementById('refreshBtn').addEventListener('click', () => {
                 this.refreshStats();
             });
+
+
 
             // Clear button
             document.getElementById('clearBtn').addEventListener('click', () => {
