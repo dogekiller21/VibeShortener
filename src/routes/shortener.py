@@ -22,12 +22,16 @@ async def shorten_url(
             detail="Failed to create short URL due to collision. Please try again.",
         )
     
+    # Generate short URL with proper protocol
+    protocol = "https" if settings.environment == "production" else "http"
+    short_url = f"{protocol}://{settings.domain}/{url_dto.short_code}"
+    
     return URLResponse(
         id=url_dto.id,
         original_url=url_dto.original_url,
         short_code=url_dto.short_code,
         created_at=url_dto.created_at,
-        short_url=f"{settings.domain}/{url_dto.short_code}",
+        short_url=short_url,
     )
 
 
