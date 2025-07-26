@@ -1,7 +1,7 @@
 services:
   app:
     build:
-      context: .
+      context: ..
       dockerfile: infrastructure/Dockerfile
     image: shortener-app
     container_name: shortener-app
@@ -16,7 +16,7 @@ services:
     networks:
       - shortener-network
     volumes:
-      - ../backend/alembic/versions:/app/alembic/versions
+      - alembic_versions:/app/alembic/versions
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
       interval: 30s
@@ -34,7 +34,7 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - alembic/versions:/app/alembic/versions
+      - alembic_versions:/app/alembic/versions
     networks:
       - shortener-network
     command: ["alembic", "upgrade", "head"]
@@ -75,6 +75,7 @@ services:
 
 volumes:
   postgres_data:
+  alembic_versions:
 
 networks:
   shortener-network:
