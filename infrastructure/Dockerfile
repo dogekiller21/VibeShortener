@@ -32,6 +32,8 @@ WORKDIR /app
 
 # Copy application code with correct ownership
 COPY --chown=app:app src/ /app/src/
+COPY --chown=app:app alembic/ /app/alembic/
+COPY --chown=app:app alembic.ini /app/alembic.ini
 
 # Activate virtual environment
 ENV PATH="/home/app/.venv/bin:$PATH" 
