@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import URL, Click
 from src.schemas import URLCreate, ClickCreate, URLDTO, ClickDTO, URLStatsDTO, DetailedURLStats
 from src.config import settings
+from src.geolocation import geolocation_service
 
 
 def generate_short_code(length: int = 8) -> str:
@@ -206,6 +207,40 @@ async def get_url_detailed_stats(db: AsyncSession, short_code: str) -> DetailedU
     result = await db.execute(user_agent_query, {"url_id": url.id})
     top_user_agents = [{"user_agent": row.user_agent, "clicks": row.clicks} for row in result]
 
+    # Get regional clicks with real geolocation
+    regional_query = text("""
+        SELECT 
+            ip_address,
+            COUNT(*) as clicks
+        FROM clicks 
+        WHERE url_id = :url_id 
+        AND ip_address IS NOT NULL 
+        AND ip_address != ''
+        GROUP BY ip_address
+        ORDER BY clicks DESC
+        LIMIT 20
+    """)
+    
+    result = await db.execute(regional_query, {"url_id": url.id})
+    regional_clicks = []
+    
+    # Используем реальную геолокацию для каждого IP
+    for row in result:
+        ip = row.ip_address
+        if ip:
+            # Получаем реальную геолокацию
+            location = await geolocation_service.get_location(ip)
+            
+            regional_clicks.append({
+                "country": location.get("country", "Неизвестно"),
+                "region": location.get("region", "Неизвестно"),
+                "city": location.get("city", "Неизвестно"),
+                "latitude": location.get("latitude"),
+                "longitude": location.get("longitude"),
+                "clicks": row.clicks,
+                "ip": ip
+            })
+
     return DetailedURLStats(
         url_id=url.id,
         short_code=url.short_code,
@@ -218,4 +253,5 @@ async def get_url_detailed_stats(db: AsyncSession, short_code: str) -> DetailedU
         hourly_distribution=hourly_distribution,
         top_referers=top_referers,
         top_user_agents=top_user_agents,
+        regional_clicks=regional_clicks,
     )

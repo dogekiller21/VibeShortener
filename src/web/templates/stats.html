@@ -4,6 +4,7 @@
 
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/heatmap.js@2.0.5/build/heatmap.min.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -190,6 +191,30 @@
                                         <canvas id="refererChart"></canvas>
                                     </div>
                                 </div>
+                                
+                                <!-- Региональная хитмапа -->
+                                <div class="bg-white rounded-lg border border-gray-200 p-6">
+                                    <h3 class="text-lg font-medium text-gray-900 mb-4">География переходов</h3>
+                                    <div class="space-y-4">
+                                        <div id="heatmapContainer" class="h-64 bg-gray-50 rounded-lg relative">
+                                            <div id="heatmap" class="w-full h-full"></div>
+                                        </div>
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div>
+                                                <h4 class="text-sm font-medium text-gray-700 mb-2">Топ регионов</h4>
+                                                <div id="topRegions" class="space-y-2"></div>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-sm font-medium text-gray-700 mb-2">Топ городов</h4>
+                                                <div id="topCities" class="space-y-2"></div>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-sm font-medium text-gray-700 mb-2">Топ стран</h4>
+                                                <div id="topCountries" class="space-y-2"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -372,9 +397,159 @@
                 </div>
             `;
         }
+        
+        // Создаем хитмапу и региональную статистику
+        createRegionalStats(data);
     } catch (error) {
         console.error('Ошибка при создании графиков:', error);
     }
+    }
+    
+    // Функция для создания региональной статистики
+    function createRegionalStats(data) {
+        if (!data.regional_clicks || data.regional_clicks.length === 0) {
+            document.getElementById('heatmapContainer').innerHTML = `
+                <div class="text-center text-gray-500 py-8">
+                    <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                    </svg>
+                    <p class="text-sm">Нет данных о географии переходов</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Группируем данные по регионам и странам
+        const regions = {};
+        const countries = {};
+        
+        data.regional_clicks.forEach(item => {
+            // Регионы
+            if (!regions[item.region]) {
+                regions[item.region] = 0;
+            }
+            regions[item.region] += item.clicks;
+            
+            // Страны
+            if (!countries[item.country]) {
+                countries[item.country] = 0;
+            }
+            countries[item.country] += item.clicks;
+        });
+        
+        // Сортируем и отображаем топ регионы
+        const topRegions = Object.entries(regions)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 5);
+            
+        const topRegionsHtml = topRegions.map(([region, clicks]) => `
+            <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                <span class="text-sm text-gray-700">${region}</span>
+                <span class="text-sm font-medium text-gray-900">${clicks}</span>
+            </div>
+        `).join('');
+        
+        // Также показываем топ городов
+        const cities = {};
+        data.regional_clicks.forEach(item => {
+            if (item.city && item.city !== item.region) {
+                if (!cities[item.city]) {
+                    cities[item.city] = 0;
+                }
+                cities[item.city] += item.clicks;
+            }
+        });
+        
+        const topCities = Object.entries(cities)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 5);
+            
+        const topCitiesHtml = topCities.map(([city, clicks]) => `
+            <div class="flex justify-between items-center p-2 bg-blue-50 rounded">
+                <span class="text-sm text-blue-700">${city}</span>
+                <span class="text-sm font-medium text-blue-900">${clicks}</span>
+            </div>
+        `).join('');
+        
+        document.getElementById('topRegions').innerHTML = topRegionsHtml;
+        document.getElementById('topCities').innerHTML = topCitiesHtml;
+        
+        // Сортируем и отображаем топ страны
+        const topCountries = Object.entries(countries)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 5);
+            
+        const topCountriesHtml = topCountries.map(([country, clicks]) => `
+            <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                <span class="text-sm text-gray-700">${country}</span>
+                <span class="text-sm font-medium text-gray-900">${clicks}</span>
+            </div>
+        `).join('');
+        
+        document.getElementById('topCountries').innerHTML = topCountriesHtml;
+        
+        // Создаем простую хитмапу (визуализация точек)
+        createSimpleHeatmap(data.regional_clicks);
+    }
+    
+    // Функция для создания простой хитмапы
+    function createSimpleHeatmap(regionalData) {
+        const container = document.getElementById('heatmap');
+        const maxClicks = Math.max(...regionalData.map(item => item.clicks));
+        
+        // Очищаем контейнер
+        container.innerHTML = '';
+        
+        // Создаем точки для каждого региона
+        regionalData.forEach((item, index) => {
+            const intensity = item.clicks / maxClicks;
+            const size = 20 + (intensity * 40); // Размер точки зависит от количества кликов
+            const opacity = 0.3 + (intensity * 0.7);
+            
+            // Используем координаты если есть, иначе случайное позиционирование
+            let x, y;
+            if (item.latitude && item.longitude) {
+                // Преобразуем координаты в позицию на карте (упрощенная проекция)
+                x = ((parseFloat(item.longitude) + 180) / 360) * 80 + 10;
+                y = ((90 - parseFloat(item.latitude)) / 180) * 60 + 10;
+            } else {
+                // Случайное позиционирование для демонстрации
+                x = 20 + (index * 15) % 80;
+                y = 20 + (Math.floor(index / 5) * 20) % 60;
+            }
+            
+            const point = document.createElement('div');
+            point.className = 'absolute rounded-full cursor-pointer transition-all duration-200 hover:scale-110';
+            point.style.cssText = `
+                left: ${x}%;
+                top: ${y}%;
+                width: ${size}px;
+                height: ${size}px;
+                background: radial-gradient(circle, rgba(59, 130, 246, ${opacity}) 0%, rgba(59, 130, 246, 0.1) 70%);
+                transform: translate(-50%, -50%);
+            `;
+            
+            // Добавляем тултип с расширенной информацией
+            const tooltipText = item.city && item.city !== item.region 
+                ? `${item.city}, ${item.region}, ${item.country}: ${item.clicks} переходов`
+                : `${item.region}, ${item.country}: ${item.clicks} переходов`;
+            point.title = tooltipText;
+            
+            container.appendChild(point);
+        });
+        
+        // Добавляем легенду
+        const legend = document.createElement('div');
+        legend.className = 'absolute bottom-2 left-2 text-xs text-gray-600';
+        legend.innerHTML = `
+            <div class="flex items-center space-x-2">
+                <div class="w-3 h-3 rounded-full bg-blue-500 opacity-30"></div>
+                <span>Меньше переходов</span>
+                <div class="w-6 h-6 rounded-full bg-blue-500 opacity-90"></div>
+                <span>Больше переходов</span>
+            </div>
+        `;
+        container.appendChild(legend);
     }
 
     // Проверяем query параметр при загрузке страницы

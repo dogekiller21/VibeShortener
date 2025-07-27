@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -5,6 +6,16 @@ from fastapi.templating import Jinja2Templates
 
 from src.config import settings
 from src.routes import shortener, stats, health, redirect
+from src.geolocation import geolocation_service
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for FastAPI app."""
+    # Startup
+    yield
+    # Shutdown
+    await geolocation_service.close()
 
 
 app = FastAPI(
@@ -13,6 +24,7 @@ app = FastAPI(
     version="0.0.1",
     debug=settings.debug,
     redirect_slashes=True,
+    lifespan=lifespan,
 )
 
 # Mount static files

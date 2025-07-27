@@ -119,3 +119,4 @@ class DetailedURLStats(BaseModel):
     hourly_distribution: list[dict]  # [{hour: 14, clicks: 3}, ...]
     top_referers: list[dict]  # [{referer: "google.com", clicks: 10}, ...]
     top_user_agents: list[dict]  # [{user_agent: "Mozilla/5.0...", clicks: 5}, ...]
+    regional_clicks: list[dict]  # [{country: "Russia", region: "Moscow", city: "Moscow", latitude: 55.7558, longitude: 37.6176, clicks: 10}, ...]
