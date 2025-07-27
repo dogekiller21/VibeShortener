@@ -18,7 +18,7 @@ async def redirect_to_url(
     url_dto = await get_url_by_short_code(db, short_code)
     if not url_dto:
         raise HTTPException(status_code=404, detail="URL not found")
-    
+
     click_data = ClickCreate(
         url_id=url_dto.id,
         ip_address=request.client.host if request.client else None,
@@ -26,4 +26,4 @@ async def redirect_to_url(
         referer=request.headers.get("referer"),
     )
     await create_click(db, click_data)
-    return RedirectResponse(url_dto.original_url) 
+    return RedirectResponse(url_dto.original_url)

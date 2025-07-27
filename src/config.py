@@ -19,10 +19,12 @@ class Settings(BaseSettings):
     domain: str = "localhost:8000"
 
     model_config = ConfigDict(
-        env_file="infrastructure/env/backend.env" if os.path.exists("infrastructure/env/backend.env") else None,
+        env_file="infrastructure/env/backend.env"
+        if os.path.exists("infrastructure/env/backend.env")
+        else None,
         env_file_encoding="utf-8",
         case_sensitive=False,
-        extra="ignore"
+        extra="ignore",
     )
 
 

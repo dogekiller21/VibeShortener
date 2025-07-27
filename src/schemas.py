@@ -113,10 +113,12 @@ class DetailedURLStats(BaseModel):
     total_clicks: int
     created_at: datetime
     last_click: datetime | None = None
-    
+
     # Chart data
     daily_clicks: list[dict]  # [{date: "2024-01-01", clicks: 5}, ...]
     hourly_distribution: list[dict]  # [{hour: 14, clicks: 3}, ...]
     top_referers: list[dict]  # [{referer: "google.com", clicks: 10}, ...]
     top_user_agents: list[dict]  # [{user_agent: "Mozilla/5.0...", clicks: 5}, ...]
-    regional_clicks: list[dict]  # [{country: "Russia", region: "Moscow", city: "Moscow", latitude: 55.7558, longitude: 37.6176, clicks: 10}, ...]
+    regional_clicks: list[
+        dict
+    ]  # [{country: "Russia", region: "Moscow", city: "Moscow", latitude: 55.7558, longitude: 37.6176, clicks: 10}, ...]

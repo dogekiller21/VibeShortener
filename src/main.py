@@ -33,6 +33,7 @@ app.mount("/static", StaticFiles(directory="src/web/static"), name="static")
 # Templates
 templates = Jinja2Templates(directory="src/web/templates")
 
+
 # Web page routes (must be defined before API routes)
 @app.get("/", response_class=HTMLResponse)
 async def web_interface(request: Request):
@@ -47,6 +48,7 @@ async def stats_interface(request: Request):
 @app.get("/links", response_class=HTMLResponse)
 async def links_interface(request: Request):
     return templates.TemplateResponse("links.html", {"request": request})
+
 
 # API routes
 api_router = APIRouter(prefix="/api/v1")

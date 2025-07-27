@@ -5,7 +5,14 @@ from sqlalchemy import select, func, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import URL, Click
-from src.schemas import URLCreate, ClickCreate, URLDTO, ClickDTO, URLStatsDTO, DetailedURLStats
+from src.schemas import (
+    URLCreate,
+    ClickCreate,
+    URLDTO,
+    ClickDTO,
+    URLStatsDTO,
+    DetailedURLStats,
+)
 from src.config import settings
 from src.geolocation import geolocation_service
 
@@ -37,7 +44,7 @@ async def create_url(db: AsyncSession, url_data: URLCreate) -> URLDTO | None:
     db.add(db_url)
     await db.commit()
     await db.refresh(db_url)
-    
+
     return URLDTO(
         id=db_url.id,
         original_url=db_url.original_url,
@@ -51,10 +58,10 @@ async def get_url_by_short_code(db: AsyncSession, short_code: str) -> URLDTO | N
     stmt = select(URL).where(URL.short_code == short_code)
     result = await db.execute(stmt)
     url = result.scalar_one_or_none()
-    
+
     if not url:
         return None
-    
+
     return URLDTO(
         id=url.id,
         original_url=url.original_url,
@@ -69,7 +76,7 @@ async def create_click(db: AsyncSession, click_data: ClickCreate) -> ClickDTO:
     db.add(db_click)
     await db.commit()
     await db.refresh(db_click)
-    
+
     return ClickDTO(
         id=db_click.id,
         url_id=db_click.url_id,
@@ -116,7 +123,9 @@ async def get_url_stats(db: AsyncSession, short_code: str) -> URLStatsDTO | None
     )
 
 
-async def get_url_detailed_stats(db: AsyncSession, short_code: str) -> DetailedURLStats | None:
+async def get_url_detailed_stats(
+    db: AsyncSession, short_code: str
+) -> DetailedURLStats | None:
     """Get detailed statistics with chart data for a URL."""
     url = await get_url_by_short_code(db, short_code)
     if not url:
@@ -152,11 +161,10 @@ async def get_url_detailed_stats(db: AsyncSession, short_code: str) -> DetailedU
         GROUP BY DATE(created_at)
         ORDER BY date
     """)
-    
-    result = await db.execute(daily_clicks_query, {
-        "url_id": url.id,
-        "seven_days_ago": seven_days_ago
-    })
+
+    result = await db.execute(
+        daily_clicks_query, {"url_id": url.id, "seven_days_ago": seven_days_ago}
+    )
     daily_clicks = [{"date": str(row.date), "clicks": row.clicks} for row in result]
 
     # Get hourly distribution
@@ -169,9 +177,11 @@ async def get_url_detailed_stats(db: AsyncSession, short_code: str) -> DetailedU
         GROUP BY EXTRACT(HOUR FROM created_at)
         ORDER BY hour
     """)
-    
+
     result = await db.execute(hourly_query, {"url_id": url.id})
-    hourly_distribution = [{"hour": int(row.hour), "clicks": row.clicks} for row in result]
+    hourly_distribution = [
+        {"hour": int(row.hour), "clicks": row.clicks} for row in result
+    ]
 
     # Get top referers
     referer_query = text("""
@@ -186,7 +196,7 @@ async def get_url_detailed_stats(db: AsyncSession, short_code: str) -> DetailedU
         ORDER BY clicks DESC
         LIMIT 10
     """)
-    
+
     result = await db.execute(referer_query, {"url_id": url.id})
     top_referers = [{"referer": row.referer, "clicks": row.clicks} for row in result]
 
@@ -203,9 +213,11 @@ async def get_url_detailed_stats(db: AsyncSession, short_code: str) -> DetailedU
         ORDER BY clicks DESC
         LIMIT 10
     """)
-    
+
     result = await db.execute(user_agent_query, {"url_id": url.id})
-    top_user_agents = [{"user_agent": row.user_agent, "clicks": row.clicks} for row in result]
+    top_user_agents = [
+        {"user_agent": row.user_agent, "clicks": row.clicks} for row in result
+    ]
 
     # Get regional clicks with real geolocation
     regional_query = text("""
@@ -220,26 +232,28 @@ async def get_url_detailed_stats(db: AsyncSession, short_code: str) -> DetailedU
         ORDER BY clicks DESC
         LIMIT 20
     """)
-    
+
     result = await db.execute(regional_query, {"url_id": url.id})
     regional_clicks = []
-    
+
     # Используем реальную геолокацию для каждого IP
     for row in result:
         ip = row.ip_address
         if ip:
             # Получаем реальную геолокацию
             location = await geolocation_service.get_location(ip)
-            
-            regional_clicks.append({
-                "country": location.get("country", "Неизвестно"),
-                "region": location.get("region", "Неизвестно"),
-                "city": location.get("city", "Неизвестно"),
-                "latitude": location.get("latitude"),
-                "longitude": location.get("longitude"),
-                "clicks": row.clicks,
-                "ip": ip
-            })
+
+            regional_clicks.append(
+                {
+                    "country": location.get("country", "Неизвестно"),
+                    "region": location.get("region", "Неизвестно"),
+                    "city": location.get("city", "Неизвестно"),
+                    "latitude": location.get("latitude"),
+                    "longitude": location.get("longitude"),
+                    "clicks": row.clicks,
+                    "ip": ip,
+                }
+            )
 
     return DetailedURLStats(
         url_id=url.id,
