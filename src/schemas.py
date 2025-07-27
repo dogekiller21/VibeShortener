@@ -98,3 +98,24 @@ class URLStats(BaseModel):
     total_clicks: int
     created_at: datetime
     last_click: datetime | None = None
+
+
+class DetailedURLStats(BaseModel):
+    """Schema for detailed URL statistics with chart data."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    # Basic stats
+    url_id: int
+    short_code: str
+    original_url: str
+    short_url: str
+    total_clicks: int
+    created_at: datetime
+    last_click: datetime | None = None
+    
+    # Chart data
+    daily_clicks: list[dict]  # [{date: "2024-01-01", clicks: 5}, ...]
+    hourly_distribution: list[dict]  # [{hour: 14, clicks: 3}, ...]
+    top_referers: list[dict]  # [{referer: "google.com", clicks: 10}, ...]
+    top_user_agents: list[dict]  # [{user_agent: "Mozilla/5.0...", clicks: 5}, ...]

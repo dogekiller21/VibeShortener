@@ -2,16 +2,20 @@
 
 {% block title %}Статистика - Vibe Shortener{% endblock %}
 
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
 {% block content %}
 <div class="py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-6xl mx-auto">
         <!-- Header -->
         <div class="text-center mb-8">
             <h1 class="text-3xl font-extrabold text-gray-900 mb-2">
                 Статистика ссылок
             </h1>
             <p class="text-gray-600">
-                Просматривайте статистику переходов по вашим коротким ссылкам
+                Просматривайте детальную статистику переходов по вашим коротким ссылкам
             </p>
         </div>
 
@@ -45,7 +49,7 @@
 
         <!-- Loading -->
         <div id="loading" class="hidden">
-            <div class="flex justify-center">
+            <div class="flex justify-center py-8">
                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
             </div>
         </div>
@@ -57,6 +61,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // Функция для получения параметров из URL
     function getQueryParam(param) {
@@ -77,7 +82,7 @@
         result.innerHTML = '';
         
         try {
-            const response = await fetch(`/api/v1/stats/${shortCode}`, {
+            const response = await fetch(`/api/v1/stats/${shortCode}/detailed`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -87,7 +92,7 @@
             const data = await response.json();
             
             if (response.ok) {
-                console.log('Статистика:', data);
+                console.log('Детальная статистика:', data);
                 
                 // Форматируем даты
                 const formatDate = (dateString) => {
@@ -108,7 +113,7 @@
                             <!-- Основная информация -->
                             <div class="space-y-4">
                                 <div class="flex items-center justify-between">
-                                    <h2 class="text-xl font-bold text-gray-900">Статистика ссылки</h2>
+                                    <h2 class="text-xl font-bold text-gray-900">Детальная статистика ссылки</h2>
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
                                         ${data.short_code}
                                     </span>
@@ -142,7 +147,7 @@
                                 </div>
                                 
                                 <!-- Статистика -->
-                                <div class="space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div class="bg-blue-50 rounded-lg p-4">
                                         <h3 class="text-sm font-medium text-blue-700 mb-2">Общее количество переходов</h3>
                                         <div class="text-2xl font-bold text-blue-900">${data.total_clicks}</div>
@@ -160,19 +165,41 @@
                                 </div>
                             </div>
                             
-                            <!-- График активности (заглушка) -->
-                            <div class="mt-6 pt-6 border-t border-gray-200">
-                                <h3 class="text-sm font-medium text-gray-700 mb-4">Активность за последние 7 дней</h3>
-                                <div class="bg-gray-50 rounded-lg p-4 text-center text-gray-500">
-                                    <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                    </svg>
-                                    <p class="text-sm">График активности будет добавлен в будущих версиях</p>
+                            <!-- Графики -->
+                            <div class="space-y-6">
+                                <!-- График активности по дням -->
+                                <div class="bg-white rounded-lg border border-gray-200 p-6">
+                                    <h3 class="text-lg font-medium text-gray-900 mb-4">Активность за последние 7 дней</h3>
+                                    <div class="h-64">
+                                        <canvas id="dailyChart"></canvas>
+                                    </div>
+                                </div>
+                                
+                                <!-- График по часам -->
+                                <div class="bg-white rounded-lg border border-gray-200 p-6">
+                                    <h3 class="text-lg font-medium text-gray-900 mb-4">Распределение переходов по часам</h3>
+                                    <div class="h-64">
+                                        <canvas id="hourlyChart"></canvas>
+                                    </div>
+                                </div>
+                                
+                                <!-- Топ рефереров -->
+                                <div class="bg-white rounded-lg border border-gray-200 p-6">
+                                    <h3 class="text-lg font-medium text-gray-900 mb-4">Топ источников трафика</h3>
+                                    <div class="h-64">
+                                        <canvas id="refererChart"></canvas>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 `;
+                
+                // Создаем графики после рендера HTML с небольшой задержкой
+                setTimeout(() => {
+                    createCharts(data);
+                }, 100);
+                
             } else {
                 result.innerHTML = `
                     <div class="bg-red-50 border border-red-200 rounded-md p-4 animate-fade-in">
@@ -216,6 +243,138 @@
             submitBtn.textContent = 'Показать статистику';
             loading.classList.add('hidden');
         }
+    }
+
+    // Функция для создания графиков
+    function createCharts(data) {
+        try {
+            // Проверяем, загружен ли Chart.js
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js не загружен');
+                return;
+            }
+            
+            // График активности по дням
+            const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+            new Chart(dailyCtx, {
+            type: 'line',
+            data: {
+                labels: data.daily_clicks.map(item => {
+                    const date = new Date(item.date);
+                    return date.toLocaleDateString('ru-RU', { month: 'short', day: 'numeric' });
+                }),
+                datasets: [{
+                    label: 'Переходы',
+                    data: data.daily_clicks.map(item => item.clicks),
+                    borderColor: 'rgb(59, 130, 246)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+
+        // График по часам
+        const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+        new Chart(hourlyCtx, {
+            type: 'bar',
+            data: {
+                labels: data.hourly_distribution.map(item => `${item.hour}:00`),
+                datasets: [{
+                    label: 'Переходы',
+                    data: data.hourly_distribution.map(item => item.clicks),
+                    backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                    borderColor: 'rgb(34, 197, 94)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+
+        // График рефереров
+        if (data.top_referers.length > 0) {
+            const refererCtx = document.getElementById('refererChart').getContext('2d');
+            new Chart(refererCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.top_referers.map(item => {
+                        // Упрощаем название реферера
+                        const url = new URL(item.referer);
+                        return url.hostname;
+                    }),
+                    datasets: [{
+                        data: data.top_referers.map(item => item.clicks),
+                        backgroundColor: [
+                            '#3B82F6',
+                            '#10B981',
+                            '#F59E0B',
+                            '#EF4444',
+                            '#8B5CF6',
+                            '#06B6D4',
+                            '#84CC16',
+                            '#F97316',
+                            '#EC4899',
+                            '#6366F1'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        } else {
+            // Если нет рефереров, показываем сообщение
+            document.getElementById('refererChart').parentElement.innerHTML = `
+                <div class="text-center text-gray-500 py-8">
+                    <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                    </svg>
+                    <p class="text-sm">Нет данных о реферерах</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Ошибка при создании графиков:', error);
+    }
     }
 
     // Проверяем query параметр при загрузке страницы

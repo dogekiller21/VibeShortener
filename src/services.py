@@ -1,11 +1,11 @@
 import secrets
 import string
-from datetime import datetime
-from sqlalchemy import select, func
+from datetime import datetime, timedelta
+from sqlalchemy import select, func, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import URL, Click
-from src.schemas import URLCreate, ClickCreate, URLDTO, ClickDTO, URLStatsDTO
+from src.schemas import URLCreate, ClickCreate, URLDTO, ClickDTO, URLStatsDTO, DetailedURLStats
 from src.config import settings
 
 
@@ -112,4 +112,110 @@ async def get_url_stats(db: AsyncSession, short_code: str) -> URLStatsDTO | None
         total_clicks=total_clicks,
         created_at=url.created_at,
         last_click=last_click.created_at if last_click else None,
+    )
+
+
+async def get_url_detailed_stats(db: AsyncSession, short_code: str) -> DetailedURLStats | None:
+    """Get detailed statistics with chart data for a URL."""
+    url = await get_url_by_short_code(db, short_code)
+    if not url:
+        return None
+
+    # Get basic stats
+    result = await db.execute(
+        select(func.count(Click.id)).where(Click.url_id == url.id)
+    )
+    total_clicks = result.scalar()
+
+    result = await db.execute(
+        select(Click)
+        .where(Click.url_id == url.id)
+        .order_by(Click.created_at.desc())
+        .limit(1)
+    )
+    last_click = result.scalar_one_or_none()
+
+    # Generate short URL using settings
+    protocol = "https" if settings.environment == "production" else "http"
+    short_url = f"{protocol}://{settings.domain}/{url.short_code}"
+
+    # Get daily clicks for last 7 days
+    seven_days_ago = datetime.now() - timedelta(days=7)
+    daily_clicks_query = text("""
+        SELECT 
+            DATE(created_at) as date,
+            COUNT(*) as clicks
+        FROM clicks 
+        WHERE url_id = :url_id 
+        AND created_at >= :seven_days_ago
+        GROUP BY DATE(created_at)
+        ORDER BY date
+    """)
+    
+    result = await db.execute(daily_clicks_query, {
+        "url_id": url.id,
+        "seven_days_ago": seven_days_ago
+    })
+    daily_clicks = [{"date": str(row.date), "clicks": row.clicks} for row in result]
+
+    # Get hourly distribution
+    hourly_query = text("""
+        SELECT 
+            EXTRACT(HOUR FROM created_at) as hour,
+            COUNT(*) as clicks
+        FROM clicks 
+        WHERE url_id = :url_id
+        GROUP BY EXTRACT(HOUR FROM created_at)
+        ORDER BY hour
+    """)
+    
+    result = await db.execute(hourly_query, {"url_id": url.id})
+    hourly_distribution = [{"hour": int(row.hour), "clicks": row.clicks} for row in result]
+
+    # Get top referers
+    referer_query = text("""
+        SELECT 
+            referer,
+            COUNT(*) as clicks
+        FROM clicks 
+        WHERE url_id = :url_id 
+        AND referer IS NOT NULL 
+        AND referer != ''
+        GROUP BY referer
+        ORDER BY clicks DESC
+        LIMIT 10
+    """)
+    
+    result = await db.execute(referer_query, {"url_id": url.id})
+    top_referers = [{"referer": row.referer, "clicks": row.clicks} for row in result]
+
+    # Get top user agents
+    user_agent_query = text("""
+        SELECT 
+            user_agent,
+            COUNT(*) as clicks
+        FROM clicks 
+        WHERE url_id = :url_id 
+        AND user_agent IS NOT NULL 
+        AND user_agent != ''
+        GROUP BY user_agent
+        ORDER BY clicks DESC
+        LIMIT 10
+    """)
+    
+    result = await db.execute(user_agent_query, {"url_id": url.id})
+    top_user_agents = [{"user_agent": row.user_agent, "clicks": row.clicks} for row in result]
+
+    return DetailedURLStats(
+        url_id=url.id,
+        short_code=url.short_code,
+        original_url=url.original_url,
+        short_url=short_url,
+        total_clicks=total_clicks,
+        created_at=url.created_at,
+        last_click=last_click.created_at if last_click else None,
+        daily_clicks=daily_clicks,
+        hourly_distribution=hourly_distribution,
+        top_referers=top_referers,
+        top_user_agents=top_user_agents,
     )
