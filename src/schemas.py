@@ -117,7 +117,6 @@ class DetailedURLStats(BaseModel):
     # Chart data
     daily_clicks: list[dict]  # [{date: "2024-01-01", clicks: 5}, ...]
     hourly_distribution: list[dict]  # [{hour: 14, clicks: 3}, ...]
-    top_referers: list[dict]  # [{referer: "google.com", clicks: 10}, ...]
     top_user_agents: list[dict]  # [{user_agent: "Mozilla/5.0...", clicks: 5}, ...]
     regional_clicks: list[
         dict

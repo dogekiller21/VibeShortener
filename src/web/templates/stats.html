@@ -184,14 +184,6 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Топ рефереров -->
-                                <div class="bg-white rounded-lg border border-gray-200 p-6">
-                                    <h3 class="text-lg font-medium text-gray-900 mb-4">Топ источников трафика</h3>
-                                    <div class="h-64">
-                                        <canvas id="refererChart"></canvas>
-                                    </div>
-                                </div>
-                                
                                 <!-- Региональная хитмапа -->
                                 <div class="bg-white rounded-lg border border-gray-200 p-6">
                                     <h3 class="text-lg font-medium text-gray-900 mb-4">География переходов</h3>
@@ -348,55 +340,6 @@
                 }
             }
         });
-
-        // График рефереров
-        if (data.top_referers.length > 0) {
-            const refererCtx = document.getElementById('refererChart').getContext('2d');
-            new Chart(refererCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: data.top_referers.map(item => {
-                        // Упрощаем название реферера
-                        const url = new URL(item.referer);
-                        return url.hostname;
-                    }),
-                    datasets: [{
-                        data: data.top_referers.map(item => item.clicks),
-                        backgroundColor: [
-                            '#3B82F6',
-                            '#10B981',
-                            '#F59E0B',
-                            '#EF4444',
-                            '#8B5CF6',
-                            '#06B6D4',
-                            '#84CC16',
-                            '#F97316',
-                            '#EC4899',
-                            '#6366F1'
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
-                }
-            });
-        } else {
-            // Если нет рефереров, показываем сообщение
-            document.getElementById('refererChart').parentElement.innerHTML = `
-                <div class="text-center text-gray-500 py-8">
-                    <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
-                    </svg>
-                    <p class="text-sm">Нет данных о реферерах</p>
-                </div>
-            `;
-        }
         
         // Создаем хитмапу и региональную статистику
         createRegionalStats(data);

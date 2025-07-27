@@ -183,24 +183,7 @@ async def get_url_detailed_stats(
         {"hour": int(row.hour), "clicks": row.clicks} for row in result
     ]
 
-    # Get top referers
-    referer_query = text("""
-        SELECT 
-            referer,
-            COUNT(*) as clicks
-        FROM clicks 
-        WHERE url_id = :url_id 
-        AND referer IS NOT NULL 
-        AND referer != ''
-        GROUP BY referer
-        ORDER BY clicks DESC
-        LIMIT 10
-    """)
-
-    result = await db.execute(referer_query, {"url_id": url.id})
-    top_referers = [{"referer": row.referer, "clicks": row.clicks} for row in result]
-
-    # Get top user agents
+        # Get top user agents
     user_agent_query = text("""
         SELECT 
             user_agent,
@@ -240,6 +223,7 @@ async def get_url_detailed_stats(
     for row in result:
         ip = row.ip_address
         if ip:
+            print(f"🌍 Обрабатываем IP для статистики: {ip} ({row.clicks} переходов)")
             # Получаем реальную геолокацию
             location = await geolocation_service.get_location(ip)
 
@@ -265,7 +249,6 @@ async def get_url_detailed_stats(
         last_click=last_click.created_at if last_click else None,
         daily_clicks=daily_clicks,
         hourly_distribution=hourly_distribution,
-        top_referers=top_referers,
         top_user_agents=top_user_agents,
         regional_clicks=regional_clicks,
     )

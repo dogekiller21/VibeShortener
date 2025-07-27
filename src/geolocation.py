@@ -13,8 +13,11 @@ class GeolocationService:
 
     async def get_location(self, ip_address: str) -> Optional[Dict[str, Any]]:
         """Get location information for an IP address."""
+        print(f"🔍 Получаем геолокацию для IP: {ip_address}")
+        
         # Пропускаем локальные IP
         if self._is_local_ip(ip_address):
+            print(f"📍 IP {ip_address} - локальная сеть")
             return {
                 "country": "Россия",
                 "region": "Локальная сеть",
@@ -34,10 +37,11 @@ class GeolocationService:
             try:
                 result = await api_func(ip_address)
                 if result:
+                    print(f"✅ Успешно получена геолокация через {api_func.__name__}: {result}")
                     self.cache[ip_address] = result
                     return result
             except Exception as e:
-                print(f"Ошибка API {api_func.__name__}: {e}")
+                print(f"❌ Ошибка API {api_func.__name__}: {e}")
                 continue
 
         # Если все API не сработали, возвращаем дефолтные данные
