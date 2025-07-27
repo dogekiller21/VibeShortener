@@ -12,19 +12,19 @@
     <div class="max-w-6xl mx-auto">
         <!-- Header -->
         <div class="text-center mb-8">
-            <h1 class="text-3xl font-extrabold text-gray-900 mb-2">
+            <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">
                 Статистика ссылок
             </h1>
-            <p class="text-gray-600">
+            <p class="text-gray-600 dark:text-gray-400">
                 Просматривайте детальную статистику переходов по вашим коротким ссылкам
             </p>
         </div>
 
         <!-- Search Form -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
             <form id="statsForm" class="space-y-4">
                 <div>
-                    <label for="shortCode" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="shortCode" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Введите короткий код ссылки
                     </label>
                     <div class="flex space-x-3">
@@ -33,13 +33,13 @@
                             name="short_code" 
                             type="text" 
                             required 
-                            class="flex-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                            class="flex-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-700 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm transition-colors duration-200"
                             placeholder="например: abc123"
                         >
                         <button 
                             type="submit" 
                             id="submitBtn"
-                            class="bg-indigo-600 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                            class="bg-indigo-600 dark:bg-indigo-500 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
                         >
                             Показать статистику
                         </button>
@@ -51,7 +51,7 @@
         <!-- Loading -->
         <div id="loading" class="hidden">
             <div class="flex justify-center py-8">
-                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
             </div>
         </div>
 
@@ -109,34 +109,34 @@
                 };
                 
                 result.innerHTML = `
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-fade-in">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-fade-in">
                         <div class="space-y-6">
                             <!-- Основная информация -->
                             <div class="space-y-4">
                                 <div class="flex items-center justify-between">
-                                    <h2 class="text-xl font-bold text-gray-900">Детальная статистика ссылки</h2>
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+                                    <h2 class="text-xl font-bold text-gray-900 dark:text-white">Детальная статистика ссылки</h2>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200">
                                         ${data.short_code}
                                     </span>
                                 </div>
                                 
                                 <div class="space-y-3">
                                     <div>
-                                        <p class="text-sm font-medium text-gray-700">Оригинальная ссылка:</p>
-                                        <a href="${data.original_url}" target="_blank" class="text-sm text-indigo-600 hover:text-indigo-500 break-all">
+                                        <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Оригинальная ссылка:</p>
+                                        <a href="${data.original_url}" target="_blank" class="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 break-all">
                                             ${data.original_url}
                                         </a>
                                     </div>
                                     
                                     <div>
-                                        <p class="text-sm font-medium text-gray-700">Короткая ссылка:</p>
+                                        <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Короткая ссылка:</p>
                                         <div class="flex items-center space-x-2">
-                                            <a href="${data.short_url}" target="_blank" class="text-sm text-indigo-600 hover:text-indigo-500">
+                                            <a href="${data.short_url}" target="_blank" class="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300">
                                                 ${data.short_url}
                                             </a>
                                             <button 
                                                 onclick="copyToClipboard('${data.short_url}', this)"
-                                                class="text-gray-400 hover:text-gray-600"
+                                                class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                                                 title="Копировать ссылку"
                                             >
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -149,19 +149,19 @@
                                 
                                 <!-- Статистика -->
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div class="bg-blue-50 rounded-lg p-4">
-                                        <h3 class="text-sm font-medium text-blue-700 mb-2">Общее количество переходов</h3>
-                                        <div class="text-2xl font-bold text-blue-900">${data.total_clicks}</div>
+                                    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                                        <h3 class="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">Общее количество переходов</h3>
+                                        <div class="text-2xl font-bold text-blue-900 dark:text-blue-100">${data.total_clicks}</div>
                                     </div>
                                     
-                                    <div class="bg-green-50 rounded-lg p-4">
-                                        <h3 class="text-sm font-medium text-green-700 mb-2">Дата создания</h3>
-                                        <div class="text-sm text-green-900">${formatDate(data.created_at)}</div>
+                                    <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                                        <h3 class="text-sm font-medium text-green-700 dark:text-green-300 mb-2">Дата создания</h3>
+                                        <div class="text-sm text-green-900 dark:text-green-100">${formatDate(data.created_at)}</div>
                                     </div>
                                     
-                                    <div class="bg-purple-50 rounded-lg p-4">
-                                        <h3 class="text-sm font-medium text-purple-700 mb-2">Последний переход</h3>
-                                        <div class="text-sm text-purple-900">${formatDate(data.last_click)}</div>
+                                    <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+                                        <h3 class="text-sm font-medium text-purple-700 dark:text-purple-300 mb-2">Последний переход</h3>
+                                        <div class="text-sm text-purple-900 dark:text-purple-100">${formatDate(data.last_click)}</div>
                                     </div>
                                 </div>
                             </div>
@@ -169,39 +169,39 @@
                             <!-- Графики -->
                             <div class="space-y-6">
                                 <!-- График активности по дням -->
-                                <div class="bg-white rounded-lg border border-gray-200 p-6">
-                                    <h3 class="text-lg font-medium text-gray-900 mb-4">Активность за последние 7 дней</h3>
+                                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Активность за последние 7 дней</h3>
                                     <div class="h-64">
                                         <canvas id="dailyChart"></canvas>
                                     </div>
                                 </div>
                                 
                                 <!-- График по часам -->
-                                <div class="bg-white rounded-lg border border-gray-200 p-6">
-                                    <h3 class="text-lg font-medium text-gray-900 mb-4">Распределение переходов по часам</h3>
+                                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Распределение переходов по часам</h3>
                                     <div class="h-64">
                                         <canvas id="hourlyChart"></canvas>
                                     </div>
                                 </div>
                                 
                                 <!-- Региональная хитмапа -->
-                                <div class="bg-white rounded-lg border border-gray-200 p-6">
-                                    <h3 class="text-lg font-medium text-gray-900 mb-4">География переходов</h3>
+                                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">География переходов</h3>
                                     <div class="space-y-4">
-                                        <div id="heatmapContainer" class="h-64 bg-gray-50 rounded-lg relative">
+                                        <div id="heatmapContainer" class="h-64 bg-gray-50 dark:bg-gray-700 rounded-lg relative">
                                             <div id="heatmap" class="w-full h-full"></div>
                                         </div>
                                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             <div>
-                                                <h4 class="text-sm font-medium text-gray-700 mb-2">Топ регионов</h4>
+                                                <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Топ регионов</h4>
                                                 <div id="topRegions" class="space-y-2"></div>
                                             </div>
                                             <div>
-                                                <h4 class="text-sm font-medium text-gray-700 mb-2">Топ городов</h4>
+                                                <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Топ городов</h4>
                                                 <div id="topCities" class="space-y-2"></div>
                                             </div>
                                             <div>
-                                                <h4 class="text-sm font-medium text-gray-700 mb-2">Топ стран</h4>
+                                                <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Топ стран</h4>
                                                 <div id="topCountries" class="space-y-2"></div>
                                             </div>
                                         </div>
@@ -219,7 +219,7 @@
                 
             } else {
                 result.innerHTML = `
-                    <div class="bg-red-50 border border-red-200 rounded-md p-4 animate-fade-in">
+                    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4 animate-fade-in">
                         <div class="flex">
                             <div class="flex-shrink-0">
                                 <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -227,8 +227,8 @@
                                 </svg>
                             </div>
                             <div class="ml-3">
-                                <h3 class="text-sm font-medium text-red-800">Ссылка не найдена</h3>
-                                <div class="mt-2 text-sm text-red-700">
+                                <h3 class="text-sm font-medium text-red-800 dark:text-red-200">Ссылка не найдена</h3>
+                                <div class="mt-2 text-sm text-red-700 dark:text-red-300">
                                     ${data.detail || 'Ссылка с таким кодом не существует'}
                                 </div>
                             </div>
@@ -239,7 +239,7 @@
         } catch (error) {
             console.error('Ошибка:', error);
             result.innerHTML = `
-                <div class="bg-red-50 border border-red-200 rounded-md p-4 animate-fade-in">
+                <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4 animate-fade-in">
                     <div class="flex">
                         <div class="flex-shrink-0">
                             <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -247,13 +247,14 @@
                             </svg>
                         </div>
                         <div class="ml-3">
-                            <h3 class="text-sm font-medium text-red-800">Ошибка</h3>
-                            <div class="mt-2 text-sm text-red-700">
+                            <h3 class="text-sm font-medium text-red-800 dark:text-red-200">Ошибка</h3>
+                            <div class="mt-2 text-sm text-red-700 dark:text-red-300">
                                 Не удалось загрузить статистику
                             </div>
                         </div>
                     </div>
-                `;
+                </div>
+            `;
         } finally {
             // Скрываем загрузку
             submitBtn.disabled = false;

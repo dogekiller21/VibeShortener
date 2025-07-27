@@ -1,7 +1,7 @@
 import secrets
 import string
 from datetime import datetime, timedelta
-from sqlalchemy import select, func, text
+from sqlalchemy import select, func, and_, extract
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import URL, Click
@@ -151,72 +151,84 @@ async def get_url_detailed_stats(
 
     # Get daily clicks for last 7 days
     seven_days_ago = datetime.now() - timedelta(days=7)
-    daily_clicks_query = text("""
-        SELECT 
-            DATE(created_at) as date,
-            COUNT(*) as clicks
-        FROM clicks 
-        WHERE url_id = :url_id 
-        AND created_at >= :seven_days_ago
-        GROUP BY DATE(created_at)
-        ORDER BY date
-    """)
-
-    result = await db.execute(
-        daily_clicks_query, {"url_id": url.id, "seven_days_ago": seven_days_ago}
+    
+    # Daily clicks query using SQLAlchemy 2.0
+    daily_clicks_stmt = (
+        select(
+            func.date(Click.created_at).label("date"),
+            func.count().label("clicks")
+        )
+        .where(
+            and_(
+                Click.url_id == url.id,
+                Click.created_at >= seven_days_ago
+            )
+        )
+        .group_by(func.date(Click.created_at))
+        .order_by(func.date(Click.created_at))
     )
+    
+    result = await db.execute(daily_clicks_stmt)
     daily_clicks = [{"date": str(row.date), "clicks": row.clicks} for row in result]
 
-    # Get hourly distribution
-    hourly_query = text("""
-        SELECT 
-            EXTRACT(HOUR FROM created_at) as hour,
-            COUNT(*) as clicks
-        FROM clicks 
-        WHERE url_id = :url_id
-        GROUP BY EXTRACT(HOUR FROM created_at)
-        ORDER BY hour
-    """)
-
-    result = await db.execute(hourly_query, {"url_id": url.id})
+    # Get hourly distribution using SQLAlchemy 2.0
+    hourly_stmt = (
+        select(
+            extract("hour", Click.created_at).label("hour"),
+            func.count().label("clicks")
+        )
+        .where(Click.url_id == url.id)
+        .group_by(extract("hour", Click.created_at))
+        .order_by(extract("hour", Click.created_at))
+    )
+    
+    result = await db.execute(hourly_stmt)
     hourly_distribution = [
         {"hour": int(row.hour), "clicks": row.clicks} for row in result
     ]
 
-        # Get top user agents
-    user_agent_query = text("""
-        SELECT 
-            user_agent,
-            COUNT(*) as clicks
-        FROM clicks 
-        WHERE url_id = :url_id 
-        AND user_agent IS NOT NULL 
-        AND user_agent != ''
-        GROUP BY user_agent
-        ORDER BY clicks DESC
-        LIMIT 10
-    """)
-
-    result = await db.execute(user_agent_query, {"url_id": url.id})
+    # Get top user agents using SQLAlchemy 2.0
+    user_agent_stmt = (
+        select(
+            Click.user_agent,
+            func.count().label("clicks")
+        )
+        .where(
+            and_(
+                Click.url_id == url.id,
+                Click.user_agent.is_not(None),
+                Click.user_agent != ""
+            )
+        )
+        .group_by(Click.user_agent)
+        .order_by(func.count().desc())
+        .limit(10)
+    )
+    
+    result = await db.execute(user_agent_stmt)
     top_user_agents = [
         {"user_agent": row.user_agent, "clicks": row.clicks} for row in result
     ]
 
-    # Get regional clicks with real geolocation
-    regional_query = text("""
-        SELECT 
-            ip_address,
-            COUNT(*) as clicks
-        FROM clicks 
-        WHERE url_id = :url_id 
-        AND ip_address IS NOT NULL 
-        AND ip_address != ''
-        GROUP BY ip_address
-        ORDER BY clicks DESC
-        LIMIT 20
-    """)
-
-    result = await db.execute(regional_query, {"url_id": url.id})
+    # Get regional clicks with real geolocation using SQLAlchemy 2.0
+    regional_stmt = (
+        select(
+            Click.ip_address,
+            func.count().label("clicks")
+        )
+        .where(
+            and_(
+                Click.url_id == url.id,
+                Click.ip_address.is_not(None),
+                Click.ip_address != ""
+            )
+        )
+        .group_by(Click.ip_address)
+        .order_by(func.count().desc())
+        .limit(20)
+    )
+    
+    result = await db.execute(regional_stmt)
     regional_clicks = []
 
     # Используем реальную геолокацию для каждого IP

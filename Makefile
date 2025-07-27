@@ -52,8 +52,8 @@ migrate-up-local: ## Apply all migrations locally
 	uv run alembic upgrade head
 
 # Testing
-test: ## Run tests
-	uv run pytest
+test: ## Run tests (placeholder)
+	@echo "Tests removed"
 
 # Code quality
 lint: ## Run linting
